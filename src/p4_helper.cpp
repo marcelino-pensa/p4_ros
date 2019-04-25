@@ -23,48 +23,48 @@ std::vector<float> diff_coeff(const std::vector<float> &coeff_in) {
 }
 
 void set_pos_eq_constraint(const geometry_msgs::Point &pos, const uint &node_idx,
-	                       std::vector<mediation_layer::NodeEqualityBound> *eq_constraints) {
-	mediation_layer::NodeEqualityBound eq_x(DimensionIdx::X, node_idx, DerivativeIdx::Position, pos.x);
-	mediation_layer::NodeEqualityBound eq_y(DimensionIdx::Y, node_idx, DerivativeIdx::Position, pos.y);
-	mediation_layer::NodeEqualityBound eq_z(DimensionIdx::Z, node_idx, DerivativeIdx::Position, pos.z);
+	                       std::vector<p4::NodeEqualityBound> *eq_constraints) {
+	p4::NodeEqualityBound eq_x(DimensionIdx::X, node_idx, DerivativeIdx::Position, pos.x);
+	p4::NodeEqualityBound eq_y(DimensionIdx::Y, node_idx, DerivativeIdx::Position, pos.y);
+	p4::NodeEqualityBound eq_z(DimensionIdx::Z, node_idx, DerivativeIdx::Position, pos.z);
 	eq_constraints->push_back(eq_x);
 	eq_constraints->push_back(eq_y);
 	eq_constraints->push_back(eq_z);
 }
 
 void set_vel_eq_constraint(const geometry_msgs::Vector3 &vel, const uint &node_idx,
-	                       std::vector<mediation_layer::NodeEqualityBound> *eq_constraints) {
-	mediation_layer::NodeEqualityBound eq_x(DimensionIdx::X, node_idx, DerivativeIdx::Velocity, vel.x);
-	mediation_layer::NodeEqualityBound eq_y(DimensionIdx::Y, node_idx, DerivativeIdx::Velocity, vel.y);
-	mediation_layer::NodeEqualityBound eq_z(DimensionIdx::Z, node_idx, DerivativeIdx::Velocity, vel.z);
+	                       std::vector<p4::NodeEqualityBound> *eq_constraints) {
+	p4::NodeEqualityBound eq_x(DimensionIdx::X, node_idx, DerivativeIdx::Velocity, vel.x);
+	p4::NodeEqualityBound eq_y(DimensionIdx::Y, node_idx, DerivativeIdx::Velocity, vel.y);
+	p4::NodeEqualityBound eq_z(DimensionIdx::Z, node_idx, DerivativeIdx::Velocity, vel.z);
 	eq_constraints->push_back(eq_x);
 	eq_constraints->push_back(eq_y);
 	eq_constraints->push_back(eq_z);
 }
 
 void set_acc_eq_constraint(const geometry_msgs::Vector3 &acc, const uint &node_idx,
-	                       std::vector<mediation_layer::NodeEqualityBound> *eq_constraints) {
-	mediation_layer::NodeEqualityBound eq_x(DimensionIdx::X, node_idx, DerivativeIdx::Acceleration, acc.x);
-	mediation_layer::NodeEqualityBound eq_y(DimensionIdx::Y, node_idx, DerivativeIdx::Acceleration, acc.y);
-	mediation_layer::NodeEqualityBound eq_z(DimensionIdx::Z, node_idx, DerivativeIdx::Acceleration, acc.z);
+	                       std::vector<p4::NodeEqualityBound> *eq_constraints) {
+	p4::NodeEqualityBound eq_x(DimensionIdx::X, node_idx, DerivativeIdx::Acceleration, acc.x);
+	p4::NodeEqualityBound eq_y(DimensionIdx::Y, node_idx, DerivativeIdx::Acceleration, acc.y);
+	p4::NodeEqualityBound eq_z(DimensionIdx::Z, node_idx, DerivativeIdx::Acceleration, acc.z);
 	eq_constraints->push_back(eq_x);
 	eq_constraints->push_back(eq_y);
 	eq_constraints->push_back(eq_z);
 }
 
 void set_max_vel(const double &max_vel, const uint &seg_idx,
-	             std::vector<mediation_layer::SegmentInequalityBound> *ineq_constraints) {
-	mediation_layer::SegmentInequalityBound ineq_x_max(seg_idx, DerivativeIdx::Velocity,
+	             std::vector<p4::SegmentInequalityBound> *ineq_constraints) {
+	p4::SegmentInequalityBound ineq_x_max(seg_idx, DerivativeIdx::Velocity,
 												       Eigen::Vector3d(1,0,0), max_vel);
-	mediation_layer::SegmentInequalityBound ineq_y_max(seg_idx, DerivativeIdx::Velocity,
+	p4::SegmentInequalityBound ineq_y_max(seg_idx, DerivativeIdx::Velocity,
 		                                               Eigen::Vector3d(0,1,0), max_vel);
-	mediation_layer::SegmentInequalityBound ineq_z_max(seg_idx, DerivativeIdx::Velocity,
+	p4::SegmentInequalityBound ineq_z_max(seg_idx, DerivativeIdx::Velocity,
 		                                               Eigen::Vector3d(0,0,1), max_vel);
-	mediation_layer::SegmentInequalityBound ineq_x_min(seg_idx, DerivativeIdx::Velocity,
+	p4::SegmentInequalityBound ineq_x_min(seg_idx, DerivativeIdx::Velocity,
 												       -Eigen::Vector3d(1,0,0), max_vel);
-	mediation_layer::SegmentInequalityBound ineq_y_min(seg_idx, DerivativeIdx::Velocity,
+	p4::SegmentInequalityBound ineq_y_min(seg_idx, DerivativeIdx::Velocity,
 		                                               -Eigen::Vector3d(0,1,0), max_vel);
-	mediation_layer::SegmentInequalityBound ineq_z_min(seg_idx, DerivativeIdx::Velocity,
+	p4::SegmentInequalityBound ineq_z_min(seg_idx, DerivativeIdx::Velocity,
 		                                               -Eigen::Vector3d(0,0,1), max_vel);
 	ineq_constraints->push_back(ineq_x_max);
 	ineq_constraints->push_back(ineq_y_max);
@@ -75,18 +75,18 @@ void set_max_vel(const double &max_vel, const uint &seg_idx,
 }
 
 void set_max_acc(const double &max_acc, const uint &seg_idx,
-	             std::vector<mediation_layer::SegmentInequalityBound> *ineq_constraints) {
-	mediation_layer::SegmentInequalityBound ineq_x_max(seg_idx, DerivativeIdx::Acceleration,
+	             std::vector<p4::SegmentInequalityBound> *ineq_constraints) {
+	p4::SegmentInequalityBound ineq_x_max(seg_idx, DerivativeIdx::Acceleration,
 												       Eigen::Vector3d(1,0,0), max_acc);
-	mediation_layer::SegmentInequalityBound ineq_y_max(seg_idx, DerivativeIdx::Acceleration,
+	p4::SegmentInequalityBound ineq_y_max(seg_idx, DerivativeIdx::Acceleration,
 		                                               Eigen::Vector3d(0,1,0), max_acc);
-	mediation_layer::SegmentInequalityBound ineq_z_max(seg_idx, DerivativeIdx::Acceleration,
+	p4::SegmentInequalityBound ineq_z_max(seg_idx, DerivativeIdx::Acceleration,
 		                                               Eigen::Vector3d(0,0,1), max_acc);
-	mediation_layer::SegmentInequalityBound ineq_x_min(seg_idx, DerivativeIdx::Acceleration,
+	p4::SegmentInequalityBound ineq_x_min(seg_idx, DerivativeIdx::Acceleration,
 												       -Eigen::Vector3d(1,0,0), max_acc);
-	mediation_layer::SegmentInequalityBound ineq_y_min(seg_idx, DerivativeIdx::Acceleration,
+	p4::SegmentInequalityBound ineq_y_min(seg_idx, DerivativeIdx::Acceleration,
 		                                               -Eigen::Vector3d(0,1,0), max_acc);
-	mediation_layer::SegmentInequalityBound ineq_z_min(seg_idx, DerivativeIdx::Acceleration,
+	p4::SegmentInequalityBound ineq_z_min(seg_idx, DerivativeIdx::Acceleration,
 		                                               -Eigen::Vector3d(0,0,1), max_acc);
 	ineq_constraints->push_back(ineq_x_max);
 	ineq_constraints->push_back(ineq_y_max);
@@ -97,18 +97,18 @@ void set_max_acc(const double &max_acc, const uint &seg_idx,
 }
 
 void set_max_jerk(const double &max_jerk, const uint &seg_idx,
-	              std::vector<mediation_layer::SegmentInequalityBound> *ineq_constraints) {
-	mediation_layer::SegmentInequalityBound ineq_x_max(seg_idx, DerivativeIdx::Jerk,
+	              std::vector<p4::SegmentInequalityBound> *ineq_constraints) {
+	p4::SegmentInequalityBound ineq_x_max(seg_idx, DerivativeIdx::Jerk,
 												       Eigen::Vector3d(1,0,0), max_jerk);
-	mediation_layer::SegmentInequalityBound ineq_y_max(seg_idx, DerivativeIdx::Jerk,
+	p4::SegmentInequalityBound ineq_y_max(seg_idx, DerivativeIdx::Jerk,
 		                                               Eigen::Vector3d(0,1,0), max_jerk);
-	mediation_layer::SegmentInequalityBound ineq_z_max(seg_idx, DerivativeIdx::Jerk,
+	p4::SegmentInequalityBound ineq_z_max(seg_idx, DerivativeIdx::Jerk,
 		                                               Eigen::Vector3d(0,0,1), max_jerk);
-	mediation_layer::SegmentInequalityBound ineq_x_min(seg_idx, DerivativeIdx::Jerk,
+	p4::SegmentInequalityBound ineq_x_min(seg_idx, DerivativeIdx::Jerk,
 												       -Eigen::Vector3d(1,0,0), max_jerk);
-	mediation_layer::SegmentInequalityBound ineq_y_min(seg_idx, DerivativeIdx::Jerk,
+	p4::SegmentInequalityBound ineq_y_min(seg_idx, DerivativeIdx::Jerk,
 		                                               -Eigen::Vector3d(0,1,0), max_jerk);
-	mediation_layer::SegmentInequalityBound ineq_z_min(seg_idx, DerivativeIdx::Jerk,
+	p4::SegmentInequalityBound ineq_z_min(seg_idx, DerivativeIdx::Jerk,
 		                                               -Eigen::Vector3d(0,0,1), max_jerk);
 	ineq_constraints->push_back(ineq_x_max);
 	ineq_constraints->push_back(ineq_y_max);
@@ -120,9 +120,9 @@ void set_max_jerk(const double &max_jerk, const uint &seg_idx,
 
 void setup_problem(const mg_msgs::minAccXYWpPVA::Request &req,
 	               std::vector<double> *times,
-				   std::vector<mediation_layer::NodeEqualityBound> *node_eq,
-				   std::vector<mediation_layer::SegmentInequalityBound> *segment_ineq,
-				   mediation_layer::PolynomialSolver::Options *solver_options) {
+				   std::vector<p4::NodeEqualityBound> *node_eq,
+				   std::vector<p4::SegmentInequalityBound> *segment_ineq,
+				   p4::PolynomialSolver::Options *solver_options) {
 	const int n_w = req.PVA_array.size(); //Number of waypoints
 	const int n_seg = n_w - 1;            //Number of polynomial segments
 
@@ -156,7 +156,7 @@ void setup_problem(const mg_msgs::minAccXYWpPVA::Request &req,
 	solver_options->polish = false;         // Polish the solution (osqp parameter)
 }
 
-mg_msgs::PolyPVA segment_pva_coeff_from_path(const mediation_layer::PolynomialPath &path,
+mg_msgs::PolyPVA segment_pva_coeff_from_path(const p4::PolynomialPath &path,
 	                                         const std::vector<double> &times,
 	                                         const uint &seg_idx, const uint &dimension_idx) {
 	mg_msgs::PolyPVA poly_pva;
@@ -191,20 +191,20 @@ std::vector<double> segment_time_to_time(const Eigen::VectorXd &segment_times) {
 }
 
 void solve_optimal_time_problem(const std::vector<double> &init_time_guess,
-	                            const std::vector<mediation_layer::NodeEqualityBound> &node_eq,
-								const std::vector<mediation_layer::SegmentInequalityBound> &segment_ineq,
-								const mediation_layer::PolynomialSolver::Options &solver_options,
-								const std::vector<mediation_layer::NodeInequalityBound> &node_ineq,
+	                            const std::vector<p4::NodeEqualityBound> &node_eq,
+								const std::vector<p4::SegmentInequalityBound> &segment_ineq,
+								const p4::PolynomialSolver::Options &solver_options,
+								const std::vector<p4::NodeInequalityBound> &node_ineq,
 								std::vector<double> *times,
-								mediation_layer::PolynomialPath *path) {
+								p4::PolynomialPath *path) {
 	// Variable declaration
 	const uint n_w = init_time_guess.size();  // Number of waypoints
 	Eigen::VectorXd segment_times = time_to_segment_time(init_time_guess);
 	double cost;
-	mediation_layer::PolynomialPath cur_trajectory;
+	p4::PolynomialPath cur_trajectory;
 
 	// Get initial solution for optimization problem
-	mediation_layer::PolynomialSolver solver(solver_options);
+	p4::PolynomialSolver solver(solver_options);
 	cur_trajectory = solver.Run(init_time_guess, node_eq, node_ineq, segment_ineq);
 	// cost = path.optimal_cost;
 

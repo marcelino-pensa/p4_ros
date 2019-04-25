@@ -3,6 +3,7 @@
 
 #include "ros/ros.h"
 #include "polynomial_solver.h"
+#include "polynomial_sampler.h"
 #include "mg_msgs/minAccXYWpPVA.h"
 #include "p4_ros/p4_helper.h"
 

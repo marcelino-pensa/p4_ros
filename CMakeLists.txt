@@ -16,8 +16,8 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(osqp REQUIRED)
-
 find_package(Eigen REQUIRED)
+find_package(Boost ${BOOST_MIN_VERSION} COMPONENTS iostreams REQUIRED)
 
 add_subdirectory(P4)
 
@@ -35,6 +35,8 @@ catkin_package(
 include_directories(
   include
   P4/src
+  P4/examples
+  ${Boost_INCLUDE_DIRS}
   ${Eigen_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
 )
@@ -43,6 +45,7 @@ include_directories(
 add_executable(p4_services src/p4_services_node.cpp
                            src/services.cpp
                            src/p4_helper.cpp
-                           P4/src/polynomial_solver.cc)
+                           P4/src/polynomial_solver.cc
+                           P4/src/polynomial_sampler.cc)
 add_dependencies(p4_services ${catkin_EXPORTED_TARGETS})
-target_link_libraries(p4_services ${catkin_LIBRARIES} osqp::osqp)
+target_link_libraries(p4_services ${catkin_LIBRARIES} ${Boost_LIBRARIES} osqp::osqp)

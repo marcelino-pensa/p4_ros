@@ -1,3 +1,6 @@
 [submodule "P4"]
 	path = P4
 	url = https://github.com/TuckerHaydon/P4.git
+[submodule "TimeOptimizer"]
+	path = TimeOptimizer
+	url = https://github.com/marcelino-pensa/TimeOptimizer.git

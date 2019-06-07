@@ -9,10 +9,27 @@ add_compile_options(-std=c++11)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
-  mg_msgs
   roscpp
   std_msgs
+  nav_msgs
   cmake_modules
+  message_generation
+)
+
+add_message_files(DIRECTORY msg FILES
+   PVA_request.msg
+   PolyPVA.msg
+)
+
+add_service_files( FILES
+  minAccXYWpPVA.srv
+  min_time.srv
+)
+
+generate_messages( DEPENDENCIES
+  std_msgs
+  nav_msgs
+  geometry_msgs
 )
 
 find_package(osqp REQUIRED)
@@ -23,7 +40,6 @@ add_subdirectory(P4)
 
 catkin_package(
   DEPENDS Eigen
-  CATKIN_DEPENDS mg_msgs
 )
 
 ###########
@@ -45,7 +61,18 @@ include_directories(
 add_executable(p4_services src/p4_services_node.cpp
                            src/services.cpp
                            src/p4_helper.cpp
+                           src/trapezoidal.cpp
                            P4/src/polynomial_solver.cc
                            P4/src/polynomial_sampler.cc)
 add_dependencies(p4_services ${catkin_EXPORTED_TARGETS})
+add_dependencies(p4_services p4_ros_generate_messages_cpp)
 target_link_libraries(p4_services ${catkin_LIBRARIES} ${Boost_LIBRARIES} osqp::osqp)
+
+add_executable(p4_client src/p4_client_example.cpp
+                           src/p4_helper.cpp
+                           src/trapezoidal.cpp
+                           P4/src/polynomial_solver.cc
+                           P4/src/polynomial_sampler.cc)
+add_dependencies(p4_client ${catkin_EXPORTED_TARGETS})
+add_dependencies(p4_client p4_ros_generate_messages_cpp)
+target_link_libraries(p4_client ${catkin_LIBRARIES} ${Boost_LIBRARIES} osqp::osqp)

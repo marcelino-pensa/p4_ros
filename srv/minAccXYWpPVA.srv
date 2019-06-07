@@ -1,0 +1,11 @@
+# This service is used to call minimum acceleration trajectories with fully constrained waypoints
+# cost returns the integral of the two norm of acceleration throughout the trajectory
+# (TODO: adapt the code to accept non-zero initial and final vel/acc/jerk)
+p4_ros/PVA_request[] PVA_array
+float32 max_vel
+float32 max_acc
+float32 max_jerk
+---
+p4_ros/PolyPVA[] X
+p4_ros/PolyPVA[] Y
+std_msgs/Float32 cost

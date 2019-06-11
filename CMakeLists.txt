@@ -68,6 +68,7 @@ add_executable(p4_services src/p4_services_node.cpp
                            src/p4_helper.cpp
                            src/trapezoidal.cpp
                            src/time_optimizer_class.cpp
+                           src/visualization_functions.cpp
                            TimeOptimizer/time_optimizer/src/time_optimizer.cpp
                            P4/src/polynomial_solver.cc
                            P4/src/polynomial_sampler.cc)

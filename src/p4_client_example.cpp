@@ -9,13 +9,13 @@
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "p4_client");
-    ros::NodeHandle node;
+    ros::NodeHandle node("~");
 
     // ros::spin();
     ros::Rate loop_rate(10);
     loop_rate.sleep();
 
-    ros::ServiceClient client = node.serviceClient<p4_ros::min_time>("min_time_solver");
+    ros::ServiceClient client = node.serviceClient<p4_ros::min_time>("/p4_services/min_time_solver");
     p4_ros::min_time req;
     req.request.pos_array.push_back(p4_helper::ros_point(0.0, 0.0, 1.0));
     req.request.pos_array.push_back(p4_helper::ros_point(1.0, 0.0, 1.0));

@@ -59,7 +59,7 @@ Visualization Manager:
       Marker Topic: /p4_services/spatial_trajectory
       Name: Trajectory
       Namespaces:
-        {}
+        time_optimal/trajectory_waypoints: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -110,25 +110,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 14.4485493
+      Distance: 12.1733189
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 3.7531023
-        Y: -0.862905502
-        Z: 6.00611747e-06
+        X: 2.52835488
+        Y: -1.08575439
+        Z: 6.24453605e-06
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.364797235
+      Pitch: 0.214797452
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 4.85540104
+      Yaw: 4.62539053
     Saved:
       - Class: rviz/Orbit
         Distance: 79.2448425

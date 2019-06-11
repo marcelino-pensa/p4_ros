@@ -94,6 +94,10 @@ void solve_optimal_time_problem(const std::vector<double> &init_time_guess,
 p4_ros::PolyPVA segment_pva_coeff_from_path(const p4::PolynomialPath &path,
 	                                        const std::vector<double> &times,
 	                                        const uint &seg_idx, const uint &dimension_idx);
+void tucker_polynomials_to_coeff_matrix(
+			const p4::PolynomialPath &path,
+			const std::vector<double> &times,
+			Eigen::VectorXd *segment_times, Eigen::MatrixXd *coeff_matrix);
 
 void plot_results(const std::vector<double> &times, const p4::PolynomialPath &path);
 

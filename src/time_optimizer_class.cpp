@@ -17,7 +17,6 @@ TimeOptimizerClass::TimeOptimizerClass(
 	d_s_ = d_s;
 	rho_ = rho;
 	poly_num_coeff_ = poly_order + 1;
-	vis_traj_width_ = 0.15;
 	polyCoeff_ = polyCoeff;
 	polyTime_ = polyTime;
 	num_segments_ = polyTime.size() - 1;
@@ -27,33 +26,11 @@ TimeOptimizerClass::TimeOptimizerClass(
         sampling_freq_ = 50;
     }
 
-    // Sets publishers and visualization markers
-    this->SetVisualizationMarkerStructures(&nh);
-
     // Solve minimum time optimization problem
     this->SolveMinTimeOpt();
 
     // Retrieve position, velocity and acceleration from optimal solution
     this->GetTrajectoryPVA(pva_vec, final_time);
-
-    // Quick nap until the publishers can finally publish
-    sleep(1);
-
-    // visualize the spatial fixed trajectory
-    visWayPointTraj(polyCoeff_, polyTime_);
-
-    // Publish a "real-time" visualization of the trajectory
-    if (visualize_output) {
-        const double tf = *final_time;
-        ROS_INFO("Final time: %f", tf);
-        ros::Rate rate(sampling_freq_);
-        for (uint i = 0; i < pva_vec->size(); i++) {
-            printf("\rPublishing trajectory for time %4.2f/%4.2f", (*pva_vec)[i].time, tf);
-            this->pubCmd((*pva_vec)[i].pos, (*pva_vec)[i].vel, (*pva_vec)[i].acc);
-            rate.sleep();
-        }
-        printf("\n\r");
-    }
 }
 
 void TimeOptimizerClass::SolveMinTimeOpt() {
@@ -72,17 +49,15 @@ void TimeOptimizerClass::SolveMinTimeOpt() {
         // pull out the results in an allocator data structure
         time_allocator_ = time_optimizer.GetTimeAllocation();
 
-        traj_time_final_ = traj_time_start_ = ros::Time::now();
+        final_time_ = 0.0;
         for(int i = 0; i < time_allocator_->time.rows(); i++)
         {   
             int K = time_allocator_->K(i);
-            traj_time_final_ += ros::Duration(time_allocator_->time(i, K - 1));
+            final_time_ += time_allocator_->time(i, K - 1);
         }
 
         cout<<"[TimeOptimizer DEMO] now start publishing commands"<<endl;
-    }
-    else
-    {
+    } else {
         cout<<"[TimeOptimizer DEMO] temporal optimization fail"<<endl;
         cout<<"[TimeOptimizer DEMO] possible resons : " << "\n" <<
         "1 - please check the spatial trajectory,"     <<  "\n" <<
@@ -91,168 +66,23 @@ void TimeOptimizerClass::SolveMinTimeOpt() {
 }
 
 void TimeOptimizerClass::GetTrajectoryPVA(std::vector<p4_ros::PVA> *pva_vec, float *final_time) {
-    const double tf = (traj_time_final_ - traj_time_start_).toSec();
     const double dt = 1.0/sampling_freq_;
     geometry_msgs::Point pos;
     geometry_msgs::Vector3 vel, acc;
     double t = 0.0;
     p4_ros::PVA pva;
-    while (t < tf) {
+    while (t < final_time_) {
         this->GetPVAatTime(t, &pva.pos, &pva.vel, &pva.acc);
         pva.time = t;
         pva_vec->push_back(pva);
         t = t + dt;
     }
-    this->GetPVAatTime(tf, &pva.pos, &pva.vel, &pva.acc);
-    pva.time = tf;
+    this->GetPVAatTime(final_time_, &pva.pos, &pva.vel, &pva.acc);
+    pva.time = final_time_;
     pva.vel = p4_helper::ros_vector3(0.0, 0.0, 0.0);
     pva.acc = p4_helper::ros_vector3(0.0, 0.0, 0.0);
     pva_vec->push_back(pva);
-    *final_time = tf;
-}
-
-void TimeOptimizerClass::SetVisualizationMarkerStructures(ros::NodeHandle *nh) {
-    // Declare trajectory publishers
-    wp_traj_vis_pub_ = nh->advertise<visualization_msgs::Marker>("spatial_trajectory", 1);
-    wp_path_vis_pub_ = nh->advertise<visualization_msgs::Marker>("waypoint_path"     , 1);
-    vis_pos_pub_     = nh->advertise<visualization_msgs::Marker>("desired_position", 1);    
-    vis_vel_pub_     = nh->advertise<visualization_msgs::Marker>("desired_velocity", 1);    
-    vis_acc_pub_     = nh->advertise<visualization_msgs::Marker>("desired_acceleration", 1);
-
-    // Set the structures for the path publishers
-    vis_pos_.id = vis_vel_.id = vis_acc_.id = 0;
-    vis_pos_.header.frame_id = vis_vel_.header.frame_id = vis_acc_.header.frame_id = "/map";
-    
-    vis_pos_.ns = "pos";
-    vis_pos_.type   = visualization_msgs::Marker::SPHERE;
-    vis_pos_.action = visualization_msgs::Marker::ADD;
-    vis_pos_.color.a = 1.0; vis_pos_.color.r = 0.0; vis_pos_.color.g = 0.0; vis_pos_.color.b = 0.0;
-    vis_pos_.scale.x = 0.2; vis_pos_.scale.y = 0.2; vis_pos_.scale.z = 0.2;
-
-    vis_vel_.ns = "vel";
-    vis_vel_.type = visualization_msgs::Marker::ARROW;
-    vis_vel_.action = visualization_msgs::Marker::ADD;
-    vis_vel_.color.a = 1.0; vis_vel_.color.r = 0.0; vis_vel_.color.g = 1.0; vis_vel_.color.b = 0.0;
-    vis_vel_.scale.x = 0.2; vis_vel_.scale.y = 0.4; vis_vel_.scale.z = 0.4;
-
-    vis_acc_.ns = "acc";
-    vis_acc_.type = visualization_msgs::Marker::ARROW;
-    vis_acc_.action = visualization_msgs::Marker::ADD;
-    vis_acc_.color.a = 1.0; vis_acc_.color.r = 1.0; vis_acc_.color.g = 1.0; vis_acc_.color.b = 0.0;
-    vis_acc_.scale.x = 0.2; vis_acc_.scale.y = 0.4; vis_acc_.scale.z = 0.4;
-}
-
-void TimeOptimizerClass::visWayPointTraj(const Eigen::MatrixXd &polyCoeff, const Eigen::VectorXd &time) {
-    visualization_msgs::Marker traj_vis;
-
-    traj_vis.header.stamp       = ros::Time::now();
-    traj_vis.header.frame_id    = "map";
-
-    traj_vis.ns = "time_optimal/trajectory_waypoints";
-    traj_vis.id = 0;
-    traj_vis.type = visualization_msgs::Marker::SPHERE_LIST;
-    traj_vis.action = visualization_msgs::Marker::ADD;
-    traj_vis.scale.x = vis_traj_width_;
-    traj_vis.scale.y = vis_traj_width_;
-    traj_vis.scale.z = vis_traj_width_;
-    traj_vis.pose.orientation.x = 0.0;
-    traj_vis.pose.orientation.y = 0.0;
-    traj_vis.pose.orientation.z = 0.0;
-    traj_vis.pose.orientation.w = 1.0;
-
-    traj_vis.color.a = 1.0;
-    traj_vis.color.r = 1.0;
-    traj_vis.color.g = 0.0;
-    traj_vis.color.b = 0.0;
-
-    double traj_len = 0.0;
-    int count = 0;
-    Vector3d cur, pre;
-    cur.setZero();
-    pre.setZero();
-
-    traj_vis.points.clear();
-    Eigen::Vector3d pos;
-    geometry_msgs::Point pt;
-
-    for(int i = 0; i < time.size(); i++ )
-    {   
-        for (double t = 0.0; t < time(i); t += 0.01, count += 1)
-        {
-          pos = getPosPoly(polyCoeff, i, t);
-          cur(0) = pt.x = pos(0);
-          cur(1) = pt.y = pos(1);
-          cur(2) = pt.z = pos(2);
-          traj_vis.points.push_back(pt);
-
-          if (count) traj_len += (pre - cur).norm();
-          pre = cur;
-        }
-    }
-
-    wp_traj_vis_pub_.publish(traj_vis);
-}
-
-void TimeOptimizerClass::visWayPointPath(const Eigen::MatrixXd &path) {
-    visualization_msgs::Marker points, line_list;
-    int id = 0;
-    points.header.frame_id    = line_list.header.frame_id    = "/map";
-    points.header.stamp       = line_list.header.stamp       = ros::Time::now();
-    points.ns                 = line_list.ns                 = "wp_path";
-    points.action             = line_list.action             = visualization_msgs::Marker::ADD;
-    points.pose.orientation.w = line_list.pose.orientation.w = 1.0;
-    points.pose.orientation.x = line_list.pose.orientation.x = 0.0;
-    points.pose.orientation.y = line_list.pose.orientation.y = 0.0;
-    points.pose.orientation.z = line_list.pose.orientation.z = 0.0;
-
-    points.id    = id;
-    line_list.id = id;
-
-    points.type    = visualization_msgs::Marker::SPHERE_LIST;
-    line_list.type = visualization_msgs::Marker::LINE_STRIP;
-
-    points.scale.x = 0.3;
-    points.scale.y = 0.3;
-    points.scale.z = 0.3;
-    points.color.a = 1.0;
-    points.color.r = 0.0;
-    points.color.g = 0.0;
-    points.color.b = 0.0;
-
-    line_list.scale.x = 0.15;
-    line_list.scale.y = 0.15;
-    line_list.scale.z = 0.15;
-    line_list.color.a = 1.0;
-
-    
-    line_list.color.r = 0.0;
-    line_list.color.g = 1.0;
-    line_list.color.b = 0.0;
-    
-    line_list.points.clear();
-
-    for(int i = 0; i < path.rows(); i++){
-      geometry_msgs::Point p;
-      p.x = path(i, 0);
-      p.y = path(i, 1); 
-      p.z = path(i, 2); 
-
-      points.points.push_back(p);
-
-      if( i < (path.rows() - 1) )
-      {
-          geometry_msgs::Point p_line;
-          p_line = p;
-          line_list.points.push_back(p_line);
-          p_line.x = path(i+1, 0);
-          p_line.y = path(i+1, 1); 
-          p_line.z = path(i+1, 2);
-          line_list.points.push_back(p_line);
-      }
-    }
-
-    wp_path_vis_pub_.publish(points);
-    wp_path_vis_pub_.publish(line_list);
+    *final_time = final_time_;
 }
 
 Eigen::Vector3d TimeOptimizerClass::getPosPoly(const Eigen::MatrixXd &polyCoeff, 
@@ -315,37 +145,6 @@ Eigen::Vector3d TimeOptimizerClass::getAccPoly(const Eigen::MatrixXd &polyCoeff,
     }
 
     return ret;
-}
-
-// Publish trajectory (real-time visualization)
-void TimeOptimizerClass::pubCmd(const geometry_msgs::Point &pos, const geometry_msgs::Vector3 &vel,
-                                const geometry_msgs::Vector3 &acc) {   
-
-    vis_pos_.header.stamp = ros::Time::now();
-    vis_vel_.header.stamp = ros::Time::now();
-    vis_acc_.header.stamp = ros::Time::now();
-    vis_pos_.points.clear();
-    vis_vel_.points.clear();
-    vis_acc_.points.clear();
-
-    vis_pos_.points.push_back(pos);
-    vis_vel_.points.push_back(pos);
-    vis_acc_.points.push_back(pos);
-
-    geometry_msgs::Point pt;
-    pt.x = pos.x + vel.x;
-    pt.y = pos.y + vel.y;
-    pt.z = pos.z + vel.z;
-    vis_vel_.points.push_back(pt);
-
-    pt.x = pos.x + acc.x;
-    pt.y = pos.y + acc.y;
-    pt.z = pos.z + acc.z;
-    vis_acc_.points.push_back(pt);
-    
-    vis_pos_pub_.publish(vis_pos_);
-    vis_vel_pub_.publish(vis_vel_);
-    vis_acc_pub_.publish(vis_acc_);
 }
 
 void TimeOptimizerClass::GetPVAatTime(

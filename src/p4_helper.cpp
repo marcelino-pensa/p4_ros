@@ -395,6 +395,37 @@ void solve_optimal_time_problem(const std::vector<double> &init_time_guess,
 	*path = solver_polished.Run(*times, node_eq, node_ineq, segment_ineq);
 }
 
+void tucker_polynomials_to_coeff_matrix(
+			const p4::PolynomialPath &path,
+			const std::vector<double> &times,
+			Eigen::VectorXd *segment_times, Eigen::MatrixXd *coeff_matrix) {
+	*segment_times = p4_helper::time_to_segment_time(times);
+	const uint n_seg = segment_times->size();
+	const uint n_coeff = path.coefficients[0].col(0).size();
+	Eigen::VectorXd segment_X, segment_Y, segment_Z;
+	*coeff_matrix = Eigen::MatrixXd::Zero(n_seg, 3*n_coeff);
+	for (uint i = 0; i < n_seg; i++) {
+		segment_X = path.coefficients[p4_helper::DimensionIdx::X].col(i);
+		segment_Y = path.coefficients[p4_helper::DimensionIdx::Y].col(i);
+		segment_Z = path.coefficients[p4_helper::DimensionIdx::Z].col(i);
+		// std::cout << segment_X.transpose() << std::endl;
+
+		// Divide each term by the factorial, because the polynomials in P4 are scaled that way
+		for (uint j = 0; j < segment_X.size(); j++) {
+			double factorial = p4_helper::factorial(j);
+			double dt_factor = pow((*segment_times)[i], j);
+			segment_X[j] = segment_X[j]/(factorial*dt_factor);
+			segment_Y[j] = segment_Y[j]/(factorial*dt_factor);
+			segment_Z[j] = segment_Z[j]/(factorial*dt_factor);
+		}
+
+		// Concatenate the segments into a single vector
+		Eigen::VectorXd concatenation(3*segment_X.size());
+		concatenation << segment_X, segment_Y, segment_Z;
+		coeff_matrix->row(i) = concatenation;
+	}
+}
+
 void plot_results(const std::vector<double> &times, const p4::PolynomialPath &path) {
 	{
 		p4::PolynomialSampler::Options sampler_options;

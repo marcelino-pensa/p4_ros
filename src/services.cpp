@@ -3,9 +3,20 @@
 
 namespace p4_ros {
 
-bool minTimeService(p4_ros::min_time::Request  &req,
-                    p4_ros::min_time::Response &res) {
-	ROS_INFO("[p4_ros] Running minimum time solver!");
+ServicesClass::ServicesClass(ros::NodeHandle *nh) {
+	nh_ = nh;
+	min_acc_srv = nh_->advertiseService("minAccSolver", &ServicesClass::minAccXYService, this);
+	min_time_srv = nh_->advertiseService("min_time_solver", &ServicesClass::minTimeService, this);
+	ROS_INFO("[p4_services] Created service %s", min_acc_srv.getService().c_str());
+	ROS_INFO("[p4_services] Created service %s", min_time_srv.getService().c_str());
+
+	// Sets publishers and visualization markers for optimal time solver
+    time_optimizer_pub_obj = visualization::TimeOptimizerPublisher(nh_);
+}
+
+bool ServicesClass::minTimeService(p4_ros::min_time::Request  &req,
+                                   p4_ros::min_time::Response &res) {
+	ROS_INFO("[p4_services] Running minimum time solver!");
 
 	// Problem variables
 	std::vector<double> times;
@@ -31,45 +42,32 @@ bool minTimeService(p4_ros::min_time::Request  &req,
 		                                  solver_options, node_ineq,
 		                                  &times_final, &path_optimized);
 	ros::Time t2 = ros::Time::now();
-	// ROS_WARN("First solver time: %f", (t1-t0).toSec());
-	ROS_WARN("Trajectory generation time: %f", (t2-t1).toSec());
+	ROS_WARN("[p4_services] Trajectory generation time: %f", (t2-t1).toSec());
 
 	// Convert segments from Tucker-polynomials (used in P4) into the form expected by the minimum time solver
-	// Dfining dt = t_seg_final - t_seg_initial, Tucker polynomials are written as follows:
+	// Defining dt = t_seg_final - t_seg_initial, Tucker polynomials are written as follows:
 	// p(t) = [a0 a1 a2 ... a3]*[1 t/dt t^2/(2! dt^2) t^3/(3! dt^3) ... t^n/(n! dt^n)]
-	const Eigen::VectorXd segment_times = p4_helper::time_to_segment_time(times_final);
-	const uint n_seg = segment_times.size();
-	const uint n_coeff = path_optimized.coefficients[0].col(0).size();
-	Eigen::VectorXd segment_X, segment_Y, segment_Z;
-	Eigen::MatrixXd coeff_matrix(n_seg, 3*n_coeff);
-	for (uint i = 0; i < n_seg; i++) {
-		segment_X = path_optimized.coefficients[p4_helper::DimensionIdx::X].col(i);
-		segment_Y = path_optimized.coefficients[p4_helper::DimensionIdx::Y].col(i);
-		segment_Z = path_optimized.coefficients[p4_helper::DimensionIdx::Z].col(i);
-		// std::cout << segment_X.transpose() << std::endl;
-
-		// Divide each term by the factorial, because the polynomials in P4 are scaled that way
-		for (uint j = 0; j < segment_X.size(); j++) {
-			double factorial = p4_helper::factorial(j);
-			double dt_factor = pow(segment_times[i], j);
-			segment_X[j] = segment_X[j]/(factorial*dt_factor);
-			segment_Y[j] = segment_Y[j]/(factorial*dt_factor);
-			segment_Z[j] = segment_Z[j]/(factorial*dt_factor);
-		}
-
-		// Concatenate the segments into a single vector
-		Eigen::VectorXd concatenation(3*segment_X.size());
-		concatenation << segment_X, segment_Y, segment_Z;
-		coeff_matrix.row(i) = concatenation;
-	}
+	Eigen::VectorXd segment_times;
+	Eigen::MatrixXd coeff_matrix;
+	p4_helper::tucker_polynomials_to_coeff_matrix(
+			path_optimized, times_final, &segment_times, &coeff_matrix);
 
 	// Run the time optimizer
+	const uint n_coeff = path_optimized.coefficients[0].col(0).size();
+	const uint poly_order = n_coeff - 1;
 	double d_s = 0.02, rho = 0.0, tf;
-	uint poly_order = n_coeff - 1;
 
 	TimeOptimizerClass time_optimizer_obj(req.max_vel, req.max_acc, req.max_jerk,
         d_s, rho, poly_order, req.sampling_freq, coeff_matrix, segment_times,
         req.visualize_output, &res.pva_vec, &res.final_time);
+
+	// visualize the spatial fixed trajectory in rviz
+    time_optimizer_pub_obj.VisualizePath(coeff_matrix, segment_times);
+
+    // Publish a "real-time" visualization of the trajectory
+    if (req.visualize_output) {
+		time_optimizer_pub_obj.PubRealTimeTraj(res.pva_vec, req.sampling_freq, res.final_time);
+    }
 
 	// p4_helper::plot_results_3d(times, path);
 	// p4_helper::plot_results_3d(times_final, path_optimized);
@@ -90,8 +88,8 @@ bool minTimeService(p4_ros::min_time::Request  &req,
 	return true;
 }
 
-bool minAccXYService(p4_ros::minAccXYWpPVA::Request  &req,
-                     p4_ros::minAccXYWpPVA::Response &res) {
+bool ServicesClass::minAccXYService(p4_ros::minAccXYWpPVA::Request  &req,
+                                    p4_ros::minAccXYWpPVA::Response &res) {
 	ROS_INFO("[p4_ros] Running minimum acceleration XY solver!");
 
 	// Problem variables

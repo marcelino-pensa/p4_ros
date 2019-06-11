@@ -56,14 +56,6 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /odom_visualization_ukf_/robot
-      Name: Robot
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Class: rviz/Marker
-      Enabled: true
       Marker Topic: /p4_services/spatial_trajectory
       Name: Trajectory
       Namespaces:
@@ -83,7 +75,7 @@ Visualization Manager:
       Marker Topic: /p4_services/desired_acceleration
       Name: Acc
       Namespaces:
-        {}
+        acc: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -91,7 +83,7 @@ Visualization Manager:
       Marker Topic: /p4_services/desired_velocity
       Name: Vel
       Namespaces:
-        {}
+        vel: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -99,7 +91,7 @@ Visualization Manager:
       Marker Topic: /p4_services/desired_position
       Name: Pos
       Namespaces:
-        {}
+        pos: true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -114,7 +106,6 @@ Visualization Manager:
       Hide Inactive Objects: true
     - Class: rviz/MoveCamera
     - Class: rviz/FocusCamera
-      Topic: goal
   Value: true
   Views:
     Current:

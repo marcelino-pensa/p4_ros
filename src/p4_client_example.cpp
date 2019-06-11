@@ -33,19 +33,20 @@ int main(int argc, char **argv)
     req.request.pos_array.push_back(p4_helper::ros_point(3.0, 0.0, 2.0));
     req.request.pos_array.push_back(p4_helper::ros_point(4.0, 0.0, 2.0));
 
-    req.request.sampling_freq = 100;
+    req.request.sampling_freq = 30;
     req.request.corridor_width = 0.1;
     req.request.max_vel = 1.0;
     req.request.max_acc = 2.0;
     req.request.max_jerk = 10.0;
+    req.request.visualize_output = true;
 
     ROS_INFO("[p4_services] Calling service %s!", client.getService().c_str());
     client.call(req);
     
-    while (ros::ok()) {
-        ros::spinOnce();
-        loop_rate.sleep();
-    }
+    // while (ros::ok()) {
+    //     ros::spinOnce();
+    //     loop_rate.sleep();
+    // }
 
   return 0;
 }

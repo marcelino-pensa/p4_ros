@@ -66,10 +66,10 @@ bool minTimeService(p4_ros::min_time::Request  &req,
 	// Run the time optimizer
 	double d_s = 0.02, rho = 0.0, tf;
 	uint poly_order = n_coeff - 1;
+
 	TimeOptimizerClass time_optimizer_obj(req.max_vel, req.max_acc, req.max_jerk,
         d_s, rho, poly_order, req.sampling_freq, coeff_matrix, segment_times,
-        &res.pva_vec, &res.final_time);
-
+        req.visualize_output, &res.pva_vec, &res.final_time);
 
 	// p4_helper::plot_results_3d(times, path);
 	// p4_helper::plot_results_3d(times_final, path_optimized);
@@ -86,6 +86,8 @@ bool minTimeService(p4_ros::min_time::Request  &req,
 	// 	std::cout << times_final[i] << "\t";
 	// }
 	// std::cout << std::endl;
+
+	return true;
 }
 
 bool minAccXYService(p4_ros::minAccXYWpPVA::Request  &req,

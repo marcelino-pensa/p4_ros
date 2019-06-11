@@ -4,12 +4,14 @@
 # max_acc imposes maximum acceleration
 # max_jerk imposes maximum jerk
 # sampling_freq has the sampling frequency of the output
+# set visualize_output to true to see a "real-time" visualization of the trajectory in Rviz
 geometry_msgs/Point[] pos_array
 float32 corridor_width
 float32 max_vel
 float32 max_acc
 float32 max_jerk
 float32 sampling_freq
+bool visualize_output
 ---
 p4_ros/PVA[] pva_vec
 float32 final_time

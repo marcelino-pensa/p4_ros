@@ -45,10 +45,12 @@ class TimeOptimizerClass{
 		               const double &max_jerk, const double &d_s,
 		               const double &rho, const uint &poly_order,
 		               const double &sampling_freq, const Eigen::MatrixXd &polyCoeff,
-		               const Eigen::VectorXd &polyTime, std::vector<p4_ros::PVA> *pva_vec,
-		               float *final_time);
+		               const Eigen::VectorXd &polyTime, const bool &visualize_output,
+	                   std::vector<p4_ros::PVA> *pva_vec, float *final_time);
 
 	void SolveMinTimeOpt();
+	void SetVisualizationMarkerStructures(ros::NodeHandle *nh);
+	void GetTrajectoryPVA(std::vector<p4_ros::PVA> *pva_vec, float *final_time);
 	void visWayPointTraj(const Eigen::MatrixXd &polyCoeff, const Eigen::VectorXd &time);
     void visWayPointPath(const Eigen::MatrixXd &path);
     Eigen::Vector3d getPosPoly(const Eigen::MatrixXd &polyCoeff, 

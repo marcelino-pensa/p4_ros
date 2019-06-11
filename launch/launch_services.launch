@@ -1,0 +1,7 @@
+<launch>
+
+  <node pkg="p4_ros" type="p4_services" name="p4_services" output="screen" required = "true">  </node>
+
+  <node name="visualization" pkg="rviz" type="rviz" output="log" args="-d $(find p4_ros)/launch/rviz_config/time_optimizer.rviz" />
+
+</launch>

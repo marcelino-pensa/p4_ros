@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(DIRECTORY msg FILES
    PVA_request.msg
    PolyPVA.msg
+   PVA.msg
 )
 
 add_service_files( FILES
@@ -52,27 +53,34 @@ include_directories(
   include
   P4/src
   P4/examples
+  TimeOptimizer/time_optimizer/src
+  TimeOptimizer/time_optimizer/third_party/include
   ${Boost_INCLUDE_DIRS}
   ${Eigen_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
 )
+
+link_directories( ${PROJECT_SOURCE_DIR}/TimeOptimizer/time_optimizer/third_party/lib/mosek8_1 )
 
 
 add_executable(p4_services src/p4_services_node.cpp
                            src/services.cpp
                            src/p4_helper.cpp
                            src/trapezoidal.cpp
+                           src/time_optimizer_class.cpp
+                           TimeOptimizer/time_optimizer/src/time_optimizer.cpp
                            P4/src/polynomial_solver.cc
                            P4/src/polynomial_sampler.cc)
 add_dependencies(p4_services ${catkin_EXPORTED_TARGETS})
 add_dependencies(p4_services p4_ros_generate_messages_cpp)
-target_link_libraries(p4_services ${catkin_LIBRARIES} ${Boost_LIBRARIES} osqp::osqp)
+target_link_libraries(p4_services ${catkin_LIBRARIES} ${Boost_LIBRARIES} osqp::osqp mosek64)
 
 add_executable(p4_client src/p4_client_example.cpp
                            src/p4_helper.cpp
                            src/trapezoidal.cpp
+                           TimeOptimizer/time_optimizer/src/time_optimizer.cpp
                            P4/src/polynomial_solver.cc
                            P4/src/polynomial_sampler.cc)
 add_dependencies(p4_client ${catkin_EXPORTED_TARGETS})
 add_dependencies(p4_client p4_ros_generate_messages_cpp)
-target_link_libraries(p4_client ${catkin_LIBRARIES} ${Boost_LIBRARIES} osqp::osqp)
+target_link_libraries(p4_client ${catkin_LIBRARIES} ${Boost_LIBRARIES} osqp::osqp mosek64)

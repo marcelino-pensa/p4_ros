@@ -4,6 +4,8 @@
 #include "ros/ros.h"
 #include "polynomial_solver.h"
 #include "polynomial_sampler.h"
+#include "p4_ros/time_optimizer_class.h"
+
 #include "p4_ros/minAccXYWpPVA.h"
 #include "p4_ros/min_time.h"
 #include "p4_ros/p4_helper.h"

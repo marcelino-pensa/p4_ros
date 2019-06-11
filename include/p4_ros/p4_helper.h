@@ -33,7 +33,11 @@ static constexpr int Crackle = 5;
 static constexpr int Pop = 6;
 }
 
+size_t factorial(size_t n);
+
 std::vector<float> eigen_to_stdvector(const Eigen::VectorXd &eig_vec);
+
+Eigen::VectorXd stdvector_to_eigen(const std::vector<double> &vec);
 
 geometry_msgs::Point eigen_to_ros_point(const Eigen::Vector3d &eig_vec);
 

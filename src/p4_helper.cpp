@@ -3,6 +3,10 @@
 
 namespace p4_helper {
 
+size_t factorial(size_t n) {
+  return (n == 1 || n == 0) ? 1 : factorial(n - 1) * n;
+}
+
 std::vector<float> eigen_to_stdvector(const Eigen::VectorXd &eig_vec) {
 	std::vector<float> vec;
 	for (uint i = 0; i < eig_vec.size(); i++) {

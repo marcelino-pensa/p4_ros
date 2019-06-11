@@ -1,12 +1,22 @@
 # This service is used to call minimum-time trajectories starting from rest and finishing at rest
 # corridor_width imposes corridor contraints between every two waypoints
+# max_vel imposes maximum velocity
+# max_acc imposes maximum acceleration
+# max_jerk imposes maximum jerk
+# sampling_freq has the sampling frequency of the output
 geometry_msgs/Point[] pos_array
 float32 corridor_width
 float32 max_vel
 float32 max_acc
 float32 max_jerk
+float32 sampling_freq
 ---
+geometry_msgs/Point[] pos
+geometry_msgs/Vector3[] vel
+geometry_msgs/Vector3[] acc
+float32[] time
+p4_ros/PVA[] pva_vec
 p4_ros/PolyPVA[] X
 p4_ros/PolyPVA[] Y
 p4_ros/PolyPVA[] Z
-std_msgs/Float32 cost
+std_msgs/Float32 final_time

@@ -8,7 +8,8 @@ TimeOptimizerClass::TimeOptimizerClass(
 	               const double &max_jerk, const double &d_s,
 	               const double &rho, const uint &poly_order,
 	               const double &sampling_freq, const Eigen::MatrixXd &polyCoeff,
-	               const Eigen::VectorXd &polyTime, std::vector<p4_ros::PVA> *pva) {
+	               const Eigen::VectorXd &polyTime, std::vector<p4_ros::PVA> *pva_vec,
+                   float *final_time) {
 	ros::NodeHandle nh("~");
 	max_vel_ = max_vel;
 	max_acc_ = max_acc;
@@ -21,6 +22,10 @@ TimeOptimizerClass::TimeOptimizerClass(
 	polyTime_ = polyTime;
 	num_segments_ = polyTime.size() - 1;
 	sampling_freq_ = sampling_freq;
+
+    if(sampling_freq_ <= 0) {
+        sampling_freq_ = 50;
+    }
 
 	// Declare trajectory publishers
     wp_traj_vis_pub_ = nh.advertise<visualization_msgs::Marker>("spatial_trajectory", 1);
@@ -64,22 +69,27 @@ TimeOptimizerClass::TimeOptimizerClass(
     geometry_msgs::Point pos;
     geometry_msgs::Vector3 vel, acc;
     double t = 0.0;
+    p4_ros::PVA pva;
     while (t < tf) {
-    	// this->GetPVAatTime(t, &pos, &vel, &acc);
-    	// pos_vec->push_back(pos);
-    	// vel_vec->push_back(vel);
-    	// acc_vec->push_back(acc);
+    	this->GetPVAatTime(t, &pva.pos, &pva.vel, &pva.acc);
+        pva.time = t;
+        pva_vec->push_back(pva);
     	t = t + dt;
     }
+    this->GetPVAatTime(tf, &pva.pos, &pva.vel, &pva.acc);
+    pva.time = tf;
+    pva.vel = p4_helper::ros_vector3(0.0, 0.0, 0.0);
+    pva.acc = p4_helper::ros_vector3(0.0, 0.0, 0.0);
+    pva_vec->push_back(pva);
+    *final_time = tf;
 
-    // ROS_INFO("Final time: %f", tf);
-    // ros::Rate rate(100);
-    // while((ros::Time::now() < traj_time_final_) && (ros::ok())) {
-    //     // ROS_INFO("Publishing for time: %f", (ros::Time::now() - traj_time_start_).toSec());
-    //     ros::spinOnce();
-    //     this->pubCmd();        
-    //     rate.sleep();
-    // }
+    ROS_INFO("Final time: %f", tf);
+    ros::Rate rate(sampling_freq_);
+    for (uint i = 0; i < pva_vec->size(); i++) {
+        ros::spinOnce();
+        this->pubCmd((*pva_vec)[i].pos, (*pva_vec)[i].vel, (*pva_vec)[i].acc);
+        rate.sleep();
+    }
 }
 
 void TimeOptimizerClass::SolveMinTimeOpt() {
@@ -292,17 +302,42 @@ Eigen::Vector3d TimeOptimizerClass::getAccPoly(const Eigen::MatrixXd &polyCoeff,
 }
 
 // Publish trajectory (real-time visualization)
-void TimeOptimizerClass::pubCmd()
-{   
-    if(ros::Time::now() > traj_time_final_ ) {
-        return;
-    }
+void TimeOptimizerClass::pubCmd(const geometry_msgs::Point &pos, const geometry_msgs::Vector3 &vel,
+                                const geometry_msgs::Vector3 &acc) {   
 
-    //publish position, velocity and acceleration command according to time bias
-    double t = max(0.0, (ros::Time::now() - traj_time_start_).toSec() );
+    vis_pos_.header.stamp = ros::Time::now();
+    vis_vel_.header.stamp = ros::Time::now();
+    vis_acc_.header.stamp = ros::Time::now();
+    vis_pos_.points.clear();
+    vis_vel_.points.clear();
+    vis_acc_.points.clear();
 
-    Eigen::MatrixXd time     = time_allocator_->time;
+    vis_pos_.points.push_back(pos);
+    vis_vel_.points.push_back(pos);
+    vis_acc_.points.push_back(pos);
+
+    geometry_msgs::Point pt;
+    pt.x = pos.x + vel.x;
+    pt.y = pos.y + vel.y;
+    pt.z = pos.z + vel.z;
+    vis_vel_.points.push_back(pt);
+
+    pt.x = pos.x + acc.x;
+    pt.y = pos.y + acc.y;
+    pt.z = pos.z + acc.z;
+    vis_acc_.points.push_back(pt);
+    
+    vis_pos_pub_.publish(vis_pos_);
+    vis_vel_pub_.publish(vis_vel_);
+    vis_acc_pub_.publish(vis_acc_);
+}
+
+void TimeOptimizerClass::GetPVAatTime(
+				const double &time_in, geometry_msgs::Point *pos,
+				geometry_msgs::Vector3 *vel, geometry_msgs::Vector3 *acc) {
+	Eigen::MatrixXd time     = time_allocator_->time;
     Eigen::MatrixXd time_acc = time_allocator_->time_acc;
+    double t = time_in;
 
     int idx;
     for(idx = 0; idx < num_segments_; idx++)
@@ -500,252 +535,15 @@ void TimeOptimizerClass::pubCmd()
         }
     }
 
-    vis_pos_.header.stamp = ros::Time::now();
-    vis_vel_.header.stamp = ros::Time::now();
-    vis_acc_.header.stamp = ros::Time::now();
-    vis_pos_.points.clear();
-    vis_vel_.points.clear();
-    vis_acc_.points.clear();
-
-    geometry_msgs::Point pt;
-    pt.x = position(0);
-    pt.y = position(1);
-    pt.z = position(2);
-
-    vis_pos_.points.push_back(pt);
-    vis_vel_.points.push_back(pt);
-    vis_acc_.points.push_back(pt);
-    
-    pt.x = position(0) + velocity(0);
-    pt.y = position(1) + velocity(1);
-    pt.z = position(2) + velocity(2);
-
-    vis_vel_.points.push_back(pt);
-
-    pt.x = position(0) + acceleration(0);
-    pt.y = position(1) + acceleration(1);
-    pt.z = position(2) + acceleration(2);
-
-    vis_acc_.points.push_back(pt);
-    
-    vis_pos_pub_.publish(vis_pos_);
-    vis_vel_pub_.publish(vis_vel_);
-    vis_acc_pub_.publish(vis_acc_);
-
+    pos->x = position(0);
+    pos->y = position(1);
+    pos->z = position(2);
+    vel->x = velocity(0);
+    vel->y = velocity(1);
+    vel->z = velocity(2);
+    acc->x = acceleration(0);
+    acc->y = acceleration(1);
+    acc->z = acceleration(2);
 }
-
-// void TimeOptimizerClass::GetPVAatTime(
-// 				const double &time_in, geometry_msgs::Point *pos,
-// 				geometry_msgs::Vector3 *vel, geometry_msgs::Vector3 *acc) {
-// 	Eigen::MatrixXd time     = time_allocator_->time;
-//     Eigen::MatrixXd time_acc = time_allocator_->time_acc;
-//     double t = time_in;
-
-//     int idx;
-//     for(idx = 0; idx < num_segments_; idx++)
-//     {   
-//         int K = time_allocator_->K(idx);
-//         if( t  > time(idx, K - 1))
-//             t -= time(idx, K - 1);
-//         else
-//             break;
-//     }
-//     double t_tmp = t;     
-
-//     int grid_num = time_allocator_->K(idx);
-    
-//     // now we need to find which grid the time instance belongs to
-//     int grid_idx;
-//     for(grid_idx = 0; grid_idx < time_allocator_->K(idx); grid_idx++){
-//         if (t > time(idx, grid_idx)) continue;
-//         else{ 
-//             if(grid_idx > 0) t -= time(idx, grid_idx - 1);
-//             else             t -= 0.0;
-//             break;
-//         }
-//     }
-    
-//     double delta_t;
-//     if(grid_idx > 0){	
-//       delta_t = (time(idx, grid_idx) - time(idx, grid_idx - 1));
-//     } else {
-//       delta_t = time(idx, grid_idx) - 0.0;
-//     }
-    
-//     double delta_s = t * time_allocator_->s_step / delta_t;
-//     double s = time_allocator_->s(idx, grid_idx) + delta_s;
-
-//     // get position data 
-//     Eigen::Vector3d position   = getPosPoly(polyCoeff_, idx, s);
-
-//     // get velocity data
-//     double s_k   = time_allocator_->s(idx, grid_idx);
-//     double s_k_1 = time_allocator_->s(idx, grid_idx + 1);
-//     double b_k   = time_allocator_->b(idx, grid_idx);
-//     double b_k_1 = time_allocator_->b(idx, grid_idx + 1);
-
-//     Vector3d velocity_s1 = getVelPoly(polyCoeff_, idx, s_k  ); 
-//     Vector3d velocity_s2 = getVelPoly(polyCoeff_, idx, s_k_1);
-
-//     Vector3d velocity1   = velocity_s1 * sqrt(b_k);
-//     Vector3d velocity2   = velocity_s2 * sqrt(b_k_1);
-//     Vector3d velocity   = velocity1 + (velocity2 - velocity1) * t / delta_t;
-
-// // ### NOTE: From what above we get the position and velocity easily.
-// // ###       positions are the same as the trajectory before re-timing; and velocity are obtained by interpolation between each grid.
-// // ###       In what follows, we will get the accleration. It's more complicated since each acceleration ais evaluated at the middle of a grid        
-//     // reset grid_idx and t for time acceleration axis
-//     t = t_tmp;
-//     for(grid_idx = 0; grid_idx < time_allocator_->K(idx); grid_idx++)
-//     {
-//         if (t > time_acc(idx, grid_idx)) continue;
-//         else{ 
-//             if(grid_idx > 0) t -= time_acc(idx, grid_idx - 1);
-//             else             t -= 0.0;
-//             break;
-//         }
-//     }
-    
-//     if(grid_idx == grid_num)
-//         t -= time_acc(idx, grid_num - 1);
-
-//     // prepare to do accleration interpolation
-//     Vector3d velocity_s, acceleration_s, acceleration1, acceleration2;
-//     Vector3d acceleration;
-
-//     double a_k;
-//     // # special case 1: the very first grid of all segments of the trajectory, do interpolation in one grid
-//     if( grid_idx == 0 && idx == 0 ) 
-//     {   
-//         s_k   = time_allocator_->s(idx, 0);
-//         s_k_1 = time_allocator_->s(idx, 0 + 1);
-        
-//         a_k   = time_allocator_->a(idx, 0);
-//         b_k   = time_allocator_->b(idx, 0);
-//         b_k_1 = time_allocator_->b(idx, 0 + 1);
-
-//         velocity_s     = getVelPoly(polyCoeff_, idx, (s_k + s_k_1 ) / 2.0);
-//         acceleration_s = getAccPoly(polyCoeff_, idx, (s_k + s_k_1 ) / 2.0);
-//         acceleration2 = velocity_s * a_k + acceleration_s * (b_k + b_k_1) / 2.0;
-//         acceleration1 << 0.0, 0.0, 0.0;
-        
-//         acceleration   = acceleration1 + (acceleration2 - acceleration1) * t / time_acc(0, 0); 
-//     }
-//     // # special case 2: the very last grid of all segments of the trajectory, do interpolation in one grid
-//     else if( grid_idx == grid_num && idx == (num_segments_ - 1) )
-//     {   
-//         s_k   = time_allocator_->s(idx, grid_num - 1);
-//         s_k_1 = time_allocator_->s(idx, grid_num);
-        
-//         a_k   = time_allocator_->a(idx, grid_num - 1);
-//         b_k   = time_allocator_->b(idx, grid_num - 1);
-//         b_k_1 = time_allocator_->b(idx, grid_num    );
-
-//         velocity_s     = getVelPoly(polyCoeff_, idx, (s_k + s_k_1 ) / 2.0);
-//         acceleration_s = getAccPoly(polyCoeff_, idx, (s_k + s_k_1 ) / 2.0);
-//         acceleration = velocity_s * a_k + acceleration_s * (b_k + b_k_1) / 2.0;
-//     }
-//     // # regular case: do interpolation between two grids
-//     else 
-//     {   
-//         // sub-case 1: two grids are in the same segment
-//         if(grid_idx < grid_num && grid_idx > 0) // take average accleration in a same segment
-//         {   
-//             delta_t = (time_acc(idx, grid_idx) - time_acc(idx, grid_idx - 1));
-            
-//             s_k   = time_allocator_->s(idx, grid_idx - 1);
-//             s_k_1 = time_allocator_->s(idx, grid_idx + 0);
-            
-//             a_k   = time_allocator_->a(idx, grid_idx - 1);
-//             b_k   = time_allocator_->b(idx, grid_idx - 1);
-//             b_k_1 = time_allocator_->b(idx, grid_idx + 0);
-
-//             velocity_s     = getVelPoly(polyCoeff_, idx, (s_k + s_k_1 ) / 2.0);
-//             acceleration_s = getAccPoly(polyCoeff_, idx, (s_k + s_k_1 ) / 2.0);
-//             acceleration1 = velocity_s * a_k + acceleration_s * (b_k + b_k_1) / 2.0;
-
-//             s_k   = time_allocator_->s(idx, grid_idx + 0);
-//             s_k_1 = time_allocator_->s(idx, grid_idx + 1);
-
-//             a_k   = time_allocator_->a(idx, grid_idx + 0);
-//             b_k   = time_allocator_->b(idx, grid_idx + 0);
-//             b_k_1 = time_allocator_->b(idx, grid_idx + 1);              
-
-//             velocity_s     = getVelPoly(polyCoeff_, idx, (s_k + s_k_1 ) / 2.0);
-//             acceleration_s = getAccPoly(polyCoeff_, idx, (s_k + s_k_1 ) / 2.0);
-//             acceleration2 = velocity_s * a_k + acceleration_s * (b_k + b_k_1) / 2.0;
-//             acceleration   = acceleration1 + (acceleration2 - acceleration1) * t / delta_t;   
-//         }
-//         // sub-case 2: two grids are in consecutive segment, the current grid is in a segment's tail
-//         else if(grid_idx == grid_num)// take average accleration between two segments
-//         {   
-//             delta_t = (time(idx, grid_num - 1) - time_acc(idx, grid_num - 1) + time_acc(idx + 1, 0) );
-            
-//             s_k   = time_allocator_->s(idx, grid_idx - 1);
-//             s_k_1 = time_allocator_->s(idx, grid_idx);
-            
-//             a_k   = time_allocator_->a(idx, grid_idx - 1);
-//             b_k   = time_allocator_->b(idx, grid_idx - 1);
-//             b_k_1 = time_allocator_->b(idx, grid_idx);
-
-//             velocity_s     = getVelPoly(polyCoeff_, idx, (s_k + s_k_1 ) / 2.0);
-//             acceleration_s = getAccPoly(polyCoeff_, idx, (s_k + s_k_1 ) / 2.0);
-//             acceleration1 = velocity_s * a_k + acceleration_s * (b_k + b_k_1) / 2.0;
-//             s_k   = time_allocator_->s(idx + 1, 0);
-//             s_k_1 = time_allocator_->s(idx + 1, 1);
-
-//             a_k   = time_allocator_->a(idx + 1, 0);
-//             b_k   = time_allocator_->b(idx + 1, 0);
-//             b_k_1 = time_allocator_->b(idx + 1, 1);              
-
-//             velocity_s     = getVelPoly(polyCoeff_, idx + 1, (s_k + s_k_1 ) / 2.0);
-//             acceleration_s = getAccPoly(polyCoeff_, idx + 1, (s_k + s_k_1 ) / 2.0);
-//             acceleration2 = velocity_s * a_k + acceleration_s * (b_k + b_k_1) / 2.0;
-//             acceleration  = acceleration1 + (acceleration2 - acceleration1) * t / delta_t;        
-//         }
-//         // sub-case 3: two grids are in consecutive segment, the current grid is in a segment's head
-//         else if(grid_idx == 0)// take average accleration between two segments
-//         {   
-//             int grid_num_k = time_allocator_->K(idx - 1);
-//             delta_t = (time(idx - 1, grid_num_k - 1) - time_acc(idx - 1, grid_num_k - 1) + time_acc(idx, 0) );
-            
-//             s_k   = time_allocator_->s(idx - 1, grid_num_k - 1);
-//             s_k_1 = time_allocator_->s(idx - 1, grid_num_k    );
-            
-//             a_k   = time_allocator_->a(idx - 1, grid_num_k - 1);
-//             b_k   = time_allocator_->b(idx - 1, grid_num_k - 1);
-//             b_k_1 = time_allocator_->b(idx - 1, grid_num_k    );
-
-//             velocity_s     = getVelPoly(polyCoeff_, idx - 1, (s_k + s_k_1 ) / 2.0);
-//             acceleration_s = getAccPoly(polyCoeff_, idx - 1, (s_k + s_k_1 ) / 2.0);
-//             acceleration1  = velocity_s * a_k + acceleration_s * (b_k + b_k_1) / 2.0;
-
-//             s_k   = time_allocator_->s(idx, 0);
-//             s_k_1 = time_allocator_->s(idx, 0 + 1);
-            
-//             a_k   = time_allocator_->a(idx, 0);
-//             b_k   = time_allocator_->b(idx, 0);
-//             b_k_1 = time_allocator_->b(idx, 0 + 1);
-
-//             velocity_s     = getVelPoly(polyCoeff_, idx, (s_k + s_k_1 ) / 2.0);
-//             acceleration_s = getAccPoly(polyCoeff_, idx, (s_k + s_k_1 ) / 2.0);
-//             acceleration2  = velocity_s * a_k + acceleration_s * (b_k + b_k_1) / 2.0;
-//             acceleration   = acceleration1 + (acceleration2 - acceleration1) * (t + time(idx - 1, grid_num_k - 1) - time_acc(idx - 1, grid_num_k - 1)) / delta_t;   
-//         } 
-//         else {
-//             // no else
-//         }
-//     }
-
-//     pos->x = position(0);
-//     pos->y = position(1);
-//     pos->z = position(2);
-//     vel->x = velocity(0);
-//     vel->y = velocity(1);
-//     vel->z = velocity(2);
-//     acc->x = acceleration(0);
-//     acc->y = acceleration(1);
-//     acc->z = acceleration(2);
-// }
 
 }  // namespace p4_ros

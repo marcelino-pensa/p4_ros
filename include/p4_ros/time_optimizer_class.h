@@ -7,8 +7,9 @@
 #include <visualization_msgs/Marker.h>
 #include <nav_msgs/Path.h>
 
-// Locally defined message types
+// Locally defined
 #include "p4_ros/PVA.h"
+#include "p4_ros/p4_helper.h"
 
 // TimeOptimizer libraries
 #include "traj_poly_mono.h"
@@ -44,7 +45,8 @@ class TimeOptimizerClass{
 		               const double &max_jerk, const double &d_s,
 		               const double &rho, const uint &poly_order,
 		               const double &sampling_freq, const Eigen::MatrixXd &polyCoeff,
-		               const Eigen::VectorXd &polyTime, std::vector<p4_ros::PVA> *pva);
+		               const Eigen::VectorXd &polyTime, std::vector<p4_ros::PVA> *pva_vec,
+		               float *final_time);
 
 	void SolveMinTimeOpt();
 	void visWayPointTraj(const Eigen::MatrixXd &polyCoeff, const Eigen::VectorXd &time);
@@ -57,7 +59,8 @@ class TimeOptimizerClass{
     	                       const int &k, const double &t);
 	void GetPVAatTime(const double &time_in, geometry_msgs::Point *pos,
 				      geometry_msgs::Vector3 *vel, geometry_msgs::Vector3 *acc);
-    void pubCmd();
+    void pubCmd(const geometry_msgs::Point &pos, const geometry_msgs::Vector3 &vel,
+    	        const geometry_msgs::Vector3 &acc);
 };
 
 

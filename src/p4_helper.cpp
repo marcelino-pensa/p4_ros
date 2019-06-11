@@ -220,11 +220,12 @@ void setup_min_time_problem(const p4_ros::min_time::Request &req,
 	}
 
 	// Configure solver options
-	solver_options->num_dimensions   = 3;   // 3D
-	solver_options->polynomial_order = 8;   // Fit an 8th-order polynomial
-	solver_options->continuity_order = 4;   // Require continuity through the 4th derivative
-	solver_options->derivative_order = 2;   // Minimize the 2nd derivative (acceleration)
-	solver_options->polish = false;         // Polish the solution (osqp parameter)
+	solver_options->num_dimensions   = 3;         // 3D
+	solver_options->polynomial_order = 7;         // Fit an 8th-order polynomial
+	solver_options->continuity_order = 4;         // Require continuity through the 4th derivative
+	solver_options->derivative_order = 1;         // Minimize the 2nd derivative (acceleration)
+	solver_options->num_intermediate_points = 10; // Number of points in segment constraints
+	solver_options->polish = false;               // Polish the solution (osqp parameter)
 }
 
 void setup_min_acc_problem(const p4_ros::minAccXYWpPVA::Request &req,

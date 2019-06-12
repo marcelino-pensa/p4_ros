@@ -8,6 +8,9 @@
 #include <visualization_msgs/Marker.h>
 #include "p4_ros/PVA.h"
 
+// Gnuplot for plotting results
+#include "gnuplot-iostream.h"
+
 namespace visualization {
 
 class TimeOptimizerPublisher {
@@ -25,6 +28,7 @@ class TimeOptimizerPublisher {
  		                 const double &final_time);
  	Eigen::Vector3d getPosPoly(const Eigen::MatrixXd &polyCoeff, const int &k,
  					           const double &t, const uint &n_coeff);
+ 	void plot_results_gnuplot(const std::vector<p4_ros::PVA> &pva_vec);
 
  private:
  	double vis_traj_width_;

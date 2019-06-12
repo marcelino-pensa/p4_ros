@@ -6,7 +6,6 @@
 #include <Eigen/Dense>
 #include "geometry_msgs/Point.h"
 #include "geometry_msgs/Vector3.h"
-#include "polynomial_solver.h"
 #include "p4_ros/minAccXYWpPVA.h"
 #include "p4_ros/min_time.h"
 #include "p4_ros/trapezoidal.h"

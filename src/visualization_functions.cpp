@@ -198,6 +198,71 @@ void TimeOptimizerPublisher::PubRealTimeTraj(const std::vector<p4_ros::PVA> &pva
     printf("\n\r");
 }
 
+void TimeOptimizerPublisher::plot_results_gnuplot(const std::vector<p4_ros::PVA> &pva_vec) {
+    {
+        std::vector<double> t_hist, x_hist, y_hist, z_hist;
+        for (uint i = 0; i < pva_vec.size(); i++) {
+            t_hist.push_back(pva_vec[i].time);
+            x_hist.push_back(pva_vec[i].pos.x);
+            y_hist.push_back(pva_vec[i].pos.y);
+            z_hist.push_back(pva_vec[i].pos.z);
+        }
+
+        Gnuplot gp;
+        gp << "plot '-' using 1:2 with lines title 'X-Position'";
+        gp << ", '-' using 1:2 with lines title 'Y-Position'";
+        gp << ", '-' using 1:2 with lines title 'Z-Position'";
+        gp << std::endl;
+        gp.send1d(boost::make_tuple(t_hist, x_hist));
+        gp.send1d(boost::make_tuple(t_hist, y_hist));
+        gp.send1d(boost::make_tuple(t_hist, z_hist));
+        gp << "set grid" << std::endl;
+        gp << "replot" << std::endl;
+    }
+
+    {
+         std::vector<double> t_hist, x_hist, y_hist, z_hist;
+        for (uint i = 0; i < pva_vec.size(); i++) {
+            t_hist.push_back(pva_vec[i].time);
+            x_hist.push_back(pva_vec[i].vel.x);
+            y_hist.push_back(pva_vec[i].vel.y);
+            z_hist.push_back(pva_vec[i].vel.z);
+        }
+
+        Gnuplot gp;
+        gp << "plot '-' using 1:2 with lines title 'X-Velocity'";
+        gp << ", '-' using 1:2 with lines title 'Y-Velocity'";
+        gp << ", '-' using 1:2 with lines title 'Z-Velocity'";
+        gp << std::endl;
+        gp.send1d(boost::make_tuple(t_hist, x_hist));
+        gp.send1d(boost::make_tuple(t_hist, y_hist));
+        gp.send1d(boost::make_tuple(t_hist, z_hist));
+        gp << "set grid" << std::endl;
+        gp << "replot" << std::endl;
+    }
+
+    {
+         std::vector<double> t_hist, x_hist, y_hist, z_hist;
+        for (uint i = 0; i < pva_vec.size(); i++) {
+            t_hist.push_back(pva_vec[i].time);
+            x_hist.push_back(pva_vec[i].acc.x);
+            y_hist.push_back(pva_vec[i].acc.y);
+            z_hist.push_back(pva_vec[i].acc.z);
+        }
+
+        Gnuplot gp;
+        gp << "plot '-' using 1:2 with lines title 'X-Acceleration'";
+        gp << ", '-' using 1:2 with lines title 'Y-Acceleration'";
+        gp << ", '-' using 1:2 with lines title 'Z-Acceleration'";
+        gp << std::endl;
+        gp.send1d(boost::make_tuple(t_hist, x_hist));
+        gp.send1d(boost::make_tuple(t_hist, y_hist));
+        gp.send1d(boost::make_tuple(t_hist, z_hist));
+        gp << "set grid" << std::endl;
+        gp << "replot" << std::endl;
+    }
+}
+
 Eigen::Vector3d TimeOptimizerPublisher::getPosPoly(const Eigen::MatrixXd &polyCoeff, 
                            const int &k, const double &t, const uint &n_coeff) {
     Eigen::Vector3d ret;

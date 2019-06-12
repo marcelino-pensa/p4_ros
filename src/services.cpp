@@ -66,6 +66,7 @@ bool ServicesClass::minTimeService(p4_ros::min_time::Request  &req,
 
     // Publish a "real-time" visualization of the trajectory
     if (req.visualize_output) {
+    	time_optimizer_pub_obj.plot_results_gnuplot(res.pva_vec);
 		time_optimizer_pub_obj.PubRealTimeTraj(res.pva_vec, req.sampling_freq, res.final_time);
     }
 

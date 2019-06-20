@@ -49,3 +49,16 @@ git clone --recursive https://github.com/marcelino-pensa/p4_ros.git
 cd ~/catkin_ws
 catkin_make
 ```
+
+- Execute an Example
+
+You will need two terminals. In the first you will start the motion-planning server:
+```
+roslaunch p4_ros launch_services.launch
+```
+
+In the second terminal, run the client example (see src/p4_client_example.cpp if you want to edit the desired trajectory):
+
+```
+rosrun p4_ros p4_client
+```

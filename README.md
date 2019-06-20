@@ -45,7 +45,7 @@ cd build
 
 ```
 cd ~/catkin_ws/src
-git clone --recursive https://github.com/AkellaSummerResearch/p4_ros.git
+git clone --recursive https://github.com/marcelino-pensa/p4_ros.git
 cd ~/catkin_ws
 catkin_make
 ```

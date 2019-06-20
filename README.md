@@ -16,7 +16,7 @@ This repository also integrates the Minimum-Time Path Planner from https://githu
 
 ## Installation instructions
 
-First, you need to install the dependencies for using P4 and TimeOptimizer.
+We assume that you have already installed ROS and that you have set a catkin workspace already. Then, you need to install the dependencies for using P4 and TimeOptimizer.
 
 - P4 dependencies:
 

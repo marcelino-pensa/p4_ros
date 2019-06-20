@@ -50,7 +50,7 @@ cd ~/catkin_ws
 catkin_make
 ```
 
-- Execute an Example
+## Execute an example
 
 You will need two terminals. In the first you will start the motion-planning server:
 ```
